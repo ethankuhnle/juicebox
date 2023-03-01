@@ -1,7 +1,6 @@
 {
   "name": "juicebox",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
     "seed:dev": "nodemon ./db/seed.js"
@@ -13,5 +12,15 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.20"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ethankuhnle/juicebox.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/ethankuhnle/juicebox/issues"
+  },
+  "homepage": "https://github.com/ethankuhnle/juicebox#readme",
+  "description": ""
 }

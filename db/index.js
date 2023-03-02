@@ -59,7 +59,7 @@ async function createUser({
 }
 
 async function updatePost(id, fields = {} ) {
-
+    console.log(id," id inside of updatePost")
     const setString = Object.keys(fields).map(
         (key, index) => `"${ key }" =$${ index + 1 }`
     ).join(', ');
@@ -75,7 +75,7 @@ async function updatePost(id, fields = {} ) {
         WHERE id= ${ id }
         RETURNING *;
         `, Object.values(fields) )
-        return user;
+        return post;
     } catch (error) {
       throw error;
     }

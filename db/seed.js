@@ -1,4 +1,4 @@
-const { client, getAllUsers, createUser } = require('./index');
+const { client, getAllUsers, createUser, updateUser } = require('./index');
 
 
 async function dropTables(){
@@ -24,7 +24,8 @@ async function createTables(){
             username varchar(255) UNIQUE NOT NULL,
             password varchar(255) NOT NULL
             );
-            `);
+        `);
+
         console.log("Finished building tables!");
     }catch(error){
         console.log("Error when building tables!");
@@ -66,6 +67,14 @@ async function testDB(){
 
         const users = await getAllUsers();
         console.log("getAllUsers:", users);
+
+        console.log("calling updateUser on users[0]");
+        const updateUserResult = await updateUser(users[0].id,{
+            name: "Newbert",
+            location: "New York"
+        });
+        console.log("Result:", updateUserResult)
+
         console.log("Finished database tests!");
     } catch(error){
         console.log("Error testing database!");

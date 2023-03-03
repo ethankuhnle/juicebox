@@ -4,10 +4,15 @@ const client = new Client('postgres://localhost:5432/juicebox-dev');
 
 async function getAllPosts() {
     try {
-        const { rows } = await client.query(`
-        SELECT id, active, "authorId", title, content FROM posts;
+        const { rows: postIds } = await client.query(`
+        SELECT id
+        FROM posts;
         `);
-        return rows
+
+        const posts = await Promise.all(postIds.map(
+          post => getPostById( post.id )
+        ));
+        return posts
     } catch (error) {
       throw error;
     }
@@ -88,15 +93,19 @@ async function createTags(tagList) {
 async function createPost({
     authorId,
     title,
-    content
+    content,
+    tags = []
   }) {
     try {
-        const { rows: [posts] } = await client.query(`
+        const { rows: [post] } = await client.query(`
         INSERT INTO posts("authorId", title, content)
         VALUES ($1, $2, $3)
         RETURNING *;
         `,[authorId, title, content]);
-        return posts;
+
+        const tagList = await createTags(tags);
+
+        return await addTagsToPost(post.id, tagList);
     } catch (error) {
       throw error;
     }
@@ -121,28 +130,54 @@ async function createUser({
     }
 }
 
-async function updatePost(id, fields = {} ) {
-    console.log(id," id inside of updatePost")
-    const setString = Object.keys(fields).map(
-        (key, index) => `"${ key }" =$${ index + 1 }`
-    ).join(', ');
+async function updatePost(postId, fields = {}) {
+  // read off the tags & remove that field 
+  const { tags } = fields; // might be undefined
+  delete fields.tags;
 
-    if (setString.length === 0) {
-        return;
-      }
+  // build the set string
+  const setString = Object.keys(fields).map(
+    (key, index) => `"${ key }"=$${ index + 1 }`
+  ).join(', ');
 
-    try {
-        const { rows: [post] } = await client.query(`
+  try {
+    // update any fields that need to be updated
+    if (setString.length > 0) {
+      await client.query(`
         UPDATE posts
         SET ${ setString }
-        WHERE id= ${ id }
+        WHERE id=${ postId }
         RETURNING *;
-        `, Object.values(fields) )
-        return post;
-    } catch (error) {
-      throw error;
+      `, Object.values(fields));
     }
+
+    // return early if there's no tags to update
+    if (tags === undefined) {
+      return await getPostById(postId);
+    }
+
+    // make any new tags that need to be made
+    const tagList = await createTags(tags);
+    const tagListIdString = tagList.map(
+      tag => `${ tag.id }`
+    ).join(', ');
+
+    // delete any post_tags from the database which aren't in that tagList
+    await client.query(`
+      DELETE FROM post_tags
+      WHERE "tagId"
+      NOT IN (${ tagListIdString })
+      AND "postId"=$1;
+    `, [postId]);
+
+    // and create post_tags as necessary
+    await addTagsToPost(postId, tagList);
+
+    return await getPostById(postId);
+  } catch (error) {
+    throw error;
   }
+}
 
 async function updateUser(id, fields = {}) {
     // build the set string
@@ -171,12 +206,16 @@ async function updateUser(id, fields = {}) {
 
 async function getPostsByUser(userId) {
     try {
-        const { rows } = await client.query(`
-        SELECT * FROM posts
+        const { rows: postIds} = await client.query(`
+        SELECT id
+        FROM posts
         WHERE "authorId"=${ userId };
         `);
 
-        return rows;
+        const posts =  await Promise.all(postIds.map(
+          post => getPostById( post.id )
+        ));
+        return posts;
     } catch (error) {
         throw error;
     }
@@ -232,6 +271,23 @@ async function getPostById(postId) {
   }
 }
 
+async function getPostsByTagName(tagName) {
+  try {
+    const { rows: postIds } = await client.query(`
+      SELECT posts.id
+      FROM posts
+      JOIN post_tags ON posts.id=post_tags."postId"
+      JOIN tags ON tags.id=post_tags."tagId"
+      WHERE tags.name=$1;
+    `, [tagName]);
+
+    return await Promise.all(postIds.map(
+      post => getPostById(post.id)
+    ));
+  } catch (error) {
+    throw error;
+  }
+} 
 
 module.exports = {
     client,
@@ -246,4 +302,5 @@ module.exports = {
     createTags,
     addTagsToPost,
     createPostTag,
+    getPostsByTagName,
 };

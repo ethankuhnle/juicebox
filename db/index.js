@@ -6,8 +6,7 @@ async function getAllPosts() {
     try {
         const { rows } = await client.query(`
         SELECT id, active, "authorId", title, content FROM posts;
-        `)
-
+        `);
         return rows
     } catch (error) {
       throw error;
@@ -66,21 +65,21 @@ async function createTags(tagList) {
   try {
     // insert the tags, doing nothing on conflict
     // returning nothing, we'll query after
-    const {rows: [insertTags]} = await client.query(`
+    await client.query(`
     INSERT INTO tags(name)
     VALUES (${ insertValues })
     ON CONFLICT (name) DO NOTHING;
-    `);
+    `, tagList);
     
     // select all tags where the name is in our taglist
     // return the rows from the query
-    const {rows: [selectTags]}  = await client.query(`
+    const { rows }  = await client.query(`
     SELECT * FROM tags 
     WHERE name 
     IN (${ selectValues })
-    `)
+    `, tagList)
 
-    return selectTags;
+    return rows;
   } catch (error) {
     throw error;
   }
@@ -245,4 +244,6 @@ module.exports = {
     getPostsByUser,
     getUserById,
     createTags,
+    addTagsToPost,
+    createPostTag,
 };

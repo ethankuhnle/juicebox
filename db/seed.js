@@ -32,13 +32,13 @@ async function createTables(){
             name VARCHAR(255) NOT NULL,
             location VARCHAR(255) NOT NULL,
             active BOOLEAN DEFAULT true,
-            username varchar(255) UNIQUE NOT NULL,
-            password varchar(255) NOT NULL
+            username VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL
             );
 
         CREATE TABLE posts(
             id SERIAL PRIMARY KEY,
-            "authorId" INTEGER REFERENCES users(id) NOT NULL,
+            "authorId" INTEGER REFERENCES users(id),
             title VARCHAR(255) NOT NULL,
             content TEXT NOT NULL,
             active BOOLEAN DEFAULT true
@@ -72,7 +72,7 @@ async function createInitialUsers(){
 async function createInitialPosts() {
     try {
       const [albert, sandra, glamgal] = await getAllUsers();
-        console.log("starting to create a post")
+        console.log("starting to create a post", albert)
       await createPost({
         authorId: albert.id,
         title: "First Post",
@@ -88,7 +88,7 @@ async function createInitialPosts() {
         title: "First Post",
         content: "This is my first post. I hope I love writing blogs as much as I love writing them."
       });
-  
+      
       // a couple more
     } catch (error) {
       throw error;

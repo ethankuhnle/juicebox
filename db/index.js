@@ -28,12 +28,12 @@ async function createPost({
     content
   }) {
     try {
-        const { rows: [post] } = await client.query(`
-        INSERT INTO post("authorId", title, content)
+        const { rows: [posts] } = await client.query(`
+        INSERT INTO posts("authorId", title, content)
         VALUES ($1, $2, $3)
         RETURNING *;
         `,[authorId, title, content]);
-        return post;
+        return posts;
     } catch (error) {
       throw error;
     }
@@ -121,15 +121,15 @@ async function getPostsByUser(userId) {
 
 async function getUserById(userId){
     try{
-        const { rows } = await client.query(`
-        SELECT * FROM users
-        WHERE id=${ userId }
+        let { rows: [user] } = await client.query(`
+        SELECT id, username, name, location, active FROM users
+        WHERE id=${ userId };
         `)
-        if(!rows){
+        if(!user){
             return null;
         }
-            const user = delete rows[0].password;
-            user.posts = getPostsByUser(userId);
+            // user = delete password;
+            user.posts = await getPostsByUser(userId);
             
             return user;
     }catch(error){

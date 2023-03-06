@@ -12,7 +12,8 @@ const { client,
     createPostTag,
     getPostsByTagName,
     getAllTags,
-    getUserByUsername
+    getUserByUsername,
+    getPostById
     } = require('./index');
 
     

@@ -1,4 +1,5 @@
 const express = require('express');
+const { token } = require('morgan');
 const usersRouter = express.Router();
 
 const morgan = require('morgan');
@@ -21,6 +22,8 @@ usersRouter.get('/', async (req, res) => {
   });
 
 usersRouter.post('/login', async (req, res, next) => {
+  const prefix = 'Bearer '
+  const auth = req.headers['Authorization'];
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -35,7 +38,12 @@ usersRouter.post('/login', async (req, res, next) => {
 
     if (user && user.password == password) {
       // create token & return to user
-      res.send({ message: "you're logged in!" });
+      const jwt = require('jsonwebtoken');
+      const token = jwt.sign({id: user.id, username: user.username}, process.env.JWT_SECRET)
+      res.send({ 
+        message: "you're logged in!",
+        token: token
+    });
     } else {
       next({ 
         name: 'IncorrectCredentialsError', 
